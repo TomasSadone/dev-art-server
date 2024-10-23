@@ -16,6 +16,7 @@ class UserRepository {
                 username,
                 (err, row: User | undefined) => {
                     if (err) {
+                        console.log('ERROR RUNNING QUERY:', err);
                         reject(
                             new InternalServerError(
                                 'Database error getting user'
@@ -35,6 +36,7 @@ class UserRepository {
                 [username, password, role],
                 function (err) {
                     if (err) {
+                        console.log('ERROR RUNNING QUERY:', err);
                         reject(
                             new InternalServerError(
                                 'Database error writing user'

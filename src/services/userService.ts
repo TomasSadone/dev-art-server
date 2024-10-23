@@ -44,7 +44,6 @@ class UserService {
     async login(username: string, password: string): Promise<User> {
         const user = await this.getUserByUsername(username);
         const match = await compare(password, user.password);
-        console.log(match);
         if (!match) {
             throw new UnauthorizedError('Password is incorrect');
         }
