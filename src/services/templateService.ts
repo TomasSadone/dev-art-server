@@ -9,6 +9,11 @@ class TemplateService {
         this.templateRepository = templateRepository;
     }
 
+    async getAllTemplates(id: User['id']): Promise<Template[]> {
+        const templates = await this.templateRepository.getAllTemplates(id);
+        return templates;
+    }
+
     async getTemplatesByOwnerId(id: User['id']) {
         const templates = await this.templateRepository.getTemplatesByOwnerId(
             id

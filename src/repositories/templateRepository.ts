@@ -10,6 +10,25 @@ class TemplateRepository {
         this.databaseConnection = databaseConnection;
     }
 
+    async getAllTemplates(id: User['id']): Promise<Template[]> {
+        return new Promise((resolve, reject) => {
+            this.databaseConnection.all(
+                'SELECT * FROM templates WHERE owner_id = 1 OR owner_id = ?',
+                [id],
+                (err, rows: Template[]) => {
+                    if (err) {
+                        reject(
+                            new InternalServerError(
+                                'Error accesing database templates'
+                            )
+                        );
+                    }
+                    resolve(rows);
+                }
+            );
+        });
+    }
+
     async getTemplatesByOwnerId(id: User['id']): Promise<Template[]> {
         return new Promise((resolve, reject) => {
             this.databaseConnection.all(
