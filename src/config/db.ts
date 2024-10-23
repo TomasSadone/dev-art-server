@@ -3,8 +3,8 @@ const sqlite3 = sqlite3Pkg.verbose();
 
 class AppDatabase {
     db: Database;
-    constructor() {
-        this.db = new sqlite3.Database('dev-art-database.db', (err) => {
+    constructor(url: string) {
+        this.db = new sqlite3.Database(url, (err) => {
             if (err) {
                 console.log('Error connecting to the database: ', err);
             } else {

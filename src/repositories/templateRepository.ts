@@ -17,6 +17,7 @@ class TemplateRepository {
                 [id],
                 (err, rows: Template[]) => {
                     if (err) {
+                        console.log('ERROR RUNNING QUERY:', err);
                         reject(
                             new InternalServerError(
                                 'Error accesing database templates'
@@ -36,6 +37,7 @@ class TemplateRepository {
                 [id],
                 (err, rows: Template[]) => {
                     if (err) {
+                        console.log('ERROR RUNNING QUERY:', err);
                         reject(
                             new InternalServerError(
                                 'Error accesing database templates'
@@ -55,6 +57,7 @@ class TemplateRepository {
                 [id],
                 (err, row: Template) => {
                     if (err) {
+                        console.log('ERROR RUNNING QUERY:', err);
                         reject(
                             new InternalServerError(
                                 'Error accesing database template'
@@ -67,61 +70,61 @@ class TemplateRepository {
         });
     }
 
-    saveTemplate(template: Template): Promise<Number> {
+    saveTemplate(template: Template): Promise<void> {
         return new Promise((resolve, reject) => {
             this.databaseConnection.run(
-                'INSERT INTO templates (id, owner_id, json) VALUES (?, ?, ?)',
-                [template.id, template.owner_id, template.json],
+                'INSERT INTO templates (owner_id, json) VALUES (?, ?)',
+                [template.owner_id, template.json],
                 function (err) {
                     if (err) {
+                        console.log('ERROR RUNNING QUERY:', err);
                         reject(
                             new InternalServerError(
                                 'Error saving template to database'
                             )
                         );
                     }
-                    resolve(this.lastID);
+                    resolve();
                 }
             );
         });
     }
 
-    deleteTemplate(template_id: Template['id']): Promise<number> {
+    deleteTemplate(template_id: Template['id']): Promise<void> {
         return new Promise((resolve, reject) => {
             this.databaseConnection.run(
-                'DELETE FROM templates WHERE template_id = ?',
+                'DELETE FROM templates WHERE id = ?',
                 [template_id],
                 function (err) {
                     if (err) {
+                        console.log('ERROR RUNNING QUERY:', err);
                         reject(
                             new InternalServerError(
                                 'Error deleting template from database'
                             )
                         );
                     }
-                    resolve(this.lastID);
+                    resolve();
                 }
             );
         });
     }
 
-    updateTemplate(
-        id: Template['id'],
-        json: Template['json']
-    ): Promise<number> {
+    updateTemplate(id: Template['id'], json: Template['json']): Promise<void> {
         return new Promise((resolve, reject) => {
             this.databaseConnection.run(
                 'UPDATE templates SET json = ? WHERE id = ?',
                 [json, id],
                 function (err) {
                     if (err) {
+                        console.log('ERROR RUNNING QUERY:', err);
                         reject(
                             new InternalServerError(
                                 'Error updating template in database'
                             )
                         );
                     }
-                    resolve(this.lastID);
+                    resolve();
                 }
             );
         });

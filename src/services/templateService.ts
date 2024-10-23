@@ -22,22 +22,28 @@ class TemplateService {
     }
 
     async getAdminTemplates() {
-        const templates = await this.templateRepository.getTemplateById(1);
+        const templates = await this.templateRepository.getTemplatesByOwnerId(
+            1
+        );
         return templates;
     }
 
-    async getTemplateById(id: Template['id'], user_id: User['id']) {
+    async getTemplateById(id: Template['id'], owner_id: User['id']) {
         const template = await this.templateRepository.getTemplateById(id);
         if (!template) {
-            throw new NotFoundError('Template to delete was not found');
+            throw new NotFoundError('Template was not found');
         }
-        if (
-            template.owner_id !== user_id
-            // con template visibility: !template.public && template.owner-id !== usr_id
-        ) {
-            throw new UnauthorizedError(
-                "You don't have permission to access this template"
-            );
+        const isAdminRequest = owner_id === 1;
+        const isAdminTemplate = template.owner_id === 1;
+        if (!isAdminRequest && !isAdminTemplate) {
+            if (
+                template.owner_id !== owner_id
+                // con template visibility: !template.public && template.owner-id !== usr_id
+            ) {
+                throw new UnauthorizedError(
+                    "You don't have permission to access this template"
+                );
+            }
         }
 
         return template;
@@ -50,14 +56,19 @@ class TemplateService {
     async updateTemplate(
         id: Template['id'],
         json: Template['json'],
-        user_id: User['id']
+        owner_id: User['id']
     ) {
-        await this.getTemplateById(id, user_id);
+        const template = await this.getTemplateById(id, owner_id);
+        if (template.owner_id !== owner_id) {
+            throw new UnauthorizedError(
+                'You do not have permission to edit this template'
+            );
+        }
         await this.templateRepository.updateTemplate(id, json);
     }
 
-    async deleteTemplate(template_id: Template['id'], user_id: User['id']) {
-        await this.getTemplateById(template_id, user_id);
+    async deleteTemplate(template_id: Template['id'], owner_id: User['id']) {
+        await this.getTemplateById(template_id, owner_id);
         await this.templateRepository.deleteTemplate(template_id);
     }
 }
