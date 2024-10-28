@@ -35,8 +35,8 @@ class UserController {
             throw new BadRequestError('Username and password must be provided');
         }
         try {
-            const user = await this.userService.login(username, password);
-            res.status(200).json(user);
+            const token = await this.userService.login(username, password);
+            res.status(200).json(token);
         } catch (err) {
             this.handleError(res, err);
         }

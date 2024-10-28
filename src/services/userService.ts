@@ -1,3 +1,4 @@
+import jwt from 'jsonwebtoken';
 import { compare, hash } from 'bcrypt';
 import UserRepository from '../repositories/userRepository';
 import {
@@ -21,7 +22,11 @@ class UserService {
         return user;
     }
 
-    async registerUser(username: string, password: string, role: UserRole) {
+    async registerUser(
+        username: string,
+        password: string,
+        role: UserRole
+    ): Promise<void> {
         try {
             const existingUser = await this.getUserByUsername(username);
             if (existingUser) {
@@ -41,13 +46,19 @@ class UserService {
         }
     }
 
-    async login(username: string, password: string): Promise<User> {
+    async login(username: string, password: string): Promise<string> {
         const user = await this.getUserByUsername(username);
         const match = await compare(password, user.password);
         if (!match) {
             throw new UnauthorizedError('Password is incorrect');
         }
-        return user;
+
+        const token = jwt.sign(
+            { id: user.id, username: user.username },
+            process.env.ACCESS_TOKEN_SECRET,
+            { expiresIn: '1d' }
+        );
+        return token;
     }
 }
 
