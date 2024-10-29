@@ -70,7 +70,7 @@ class TemplateRepository {
         });
     }
 
-    saveTemplate(template: Template): Promise<void> {
+    saveTemplate(template: Omit<Template, 'id'>): Promise<void> {
         return new Promise((resolve, reject) => {
             this.databaseConnection.run(
                 'INSERT INTO templates (owner_id, json) VALUES (?, ?)',

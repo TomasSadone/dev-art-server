@@ -1,155 +1,130 @@
-import { BadRequestError, ResponseError } from '../errors/errors';
+import { BadRequestError, UnauthorizedError } from '../errors/errors';
 import TemplateService from '../services/templateService';
-import { Request, Response, Router } from 'express';
+import { NextFunction, Request, Response } from 'express';
 import MessageResponse from '../types/MessageResponse';
-const router = Router();
 
 class TemplateController {
     templateService: TemplateService;
     constructor(templateService: TemplateService) {
         this.templateService = templateService;
-        router.get('/all/:owner_id', this.getAllTemplates.bind(this));
-        router.get('/own/:owner_id', this.getTemplatesByOwnerId.bind(this));
-        router.get('/admin', this.getAdminTemplates.bind(this));
-        router.get(
-            '/template/:template_id/:owner_id',
-            this.getTemplateById.bind(this)
-        );
-        router.post('/', this.saveTemplate.bind(this));
-        router.put('/update', this.updateTemplate.bind(this));
-        router.delete(
-            '/:template_id/:owner_id',
-            this.deleteTemplate.bind(this)
-        );
     }
 
-    async getAllTemplates(req: Request, res: Response) {
-        try {
-            const { owner_id } = req.params;
-            if (!owner_id) {
-                throw new BadRequestError('owner_id must be provided');
-            }
-            const templates = await this.templateService.getAllTemplates(
-                Number(owner_id)
-            );
-            res.status(200).json(templates);
-        } catch (err) {
-            this.handleError(res, err);
-        }
-    }
-
-    async getTemplatesByOwnerId(req: Request, res: Response) {
-        try {
-            const { owner_id } = req.params;
-            if (!owner_id) {
-                throw new BadRequestError('owner_id must be provided');
-            }
-            const templates = await this.templateService.getTemplatesByOwnerId(
-                Number(owner_id)
-            );
-            res.status(200).json(templates);
-        } catch (err) {
-            this.handleError(res, err);
-        }
-    }
-
-    async getAdminTemplates(_req: Request, res: Response) {
+    async getAdminTemplates(_req: Request, res: Response, next: NextFunction) {
         try {
             const templates = await this.templateService.getAdminTemplates();
             res.status(200).json(templates);
         } catch (err) {
-            this.handleError(res, err);
+            next(err);
         }
     }
 
-    async getTemplateById(req: Request, res: Response) {
+    async getAllTemplates(req: Request, res: Response, next: NextFunction) {
         try {
-            const { template_id, owner_id } = req.params;
-            if (!template_id || !owner_id) {
-                throw new BadRequestError(
-                    'template_id and owner_id are required'
-                );
+            const user = this.getReqUser(req);
+            const templates = await this.templateService.getAllTemplates(
+                Number(user.id)
+            );
+            res.status(200).json(templates);
+        } catch (err) {
+            next(err);
+        }
+    }
+
+    async getTemplatesByOwnerId(
+        req: Request,
+        res: Response,
+        next: NextFunction
+    ) {
+        try {
+            const user = this.getReqUser(req);
+            const templates = await this.templateService.getTemplatesByOwnerId(
+                Number(user.id)
+            );
+            res.status(200).json(templates);
+        } catch (err) {
+            next(err);
+        }
+    }
+
+    async getTemplateById(req: Request, res: Response, next: NextFunction) {
+        try {
+            const user = this.getReqUser(req);
+            const { template_id } = req.params;
+            if (!template_id) {
+                throw new BadRequestError('template_id is required');
             }
             const template = await this.templateService.getTemplateById(
                 Number(template_id),
-                Number(owner_id)
+                Number(user.id)
             );
-            console.log('Catching');
             res.status(200).json(template);
         } catch (err) {
-            this.handleError(res, err);
+            next(err);
         }
     }
 
-    async saveTemplate(req: Request, res: Response) {
+    async saveTemplate(req: Request, res: Response, next: NextFunction) {
         try {
+            const user = this.getReqUser(req);
             const { template } = req.body;
-            if (!template || !template.json || !template.owner_id) {
+            if (!template || !template.json) {
                 throw new BadRequestError(
-                    "Template and it's json, and owner_id must be provided"
+                    "Template and it's json must be provided"
                 );
             }
-            await this.templateService.saveTemplate(template);
+            await this.templateService.saveTemplate(template.json, user.id);
             res.status(200).json(
                 new MessageResponse('Template saved successfully')
             );
         } catch (err) {
-            this.handleError(res, err);
+            next(err);
         }
     }
 
-    async updateTemplate(req: Request, res: Response) {
+    async updateTemplate(req: Request, res: Response, next: NextFunction) {
         try {
-            const { template, owner_id } = req.body;
-            if (!owner_id || !template || !template.id || !template.json) {
+            const user = this.getReqUser(req);
+            const { template } = req.body;
+            if (!template || !template.id || !template.json) {
                 throw new BadRequestError(
-                    "owner_id, Template and it's id, and json, must be provided"
+                    'A template with id and json must be provided'
                 );
             }
-            await this.templateService.updateTemplate(
-                template.id,
-                template.json,
-                owner_id
-            );
+            await this.templateService.updateTemplate(template, user.id);
             res.status(200).json(
                 new MessageResponse('Template updated successfully')
             );
         } catch (err) {
-            this.handleError(res, err);
+            next(err);
         }
     }
 
-    async deleteTemplate(req: Request, res: Response) {
+    async deleteTemplate(req: Request, res: Response, next: NextFunction) {
         try {
-            const { template_id, owner_id } = req.params;
-            if (!owner_id || !template_id) {
-                throw new BadRequestError(
-                    'owner_id and template_id must be provided'
-                );
+            const user = this.getReqUser(req);
+
+            const { template_id } = req.params;
+            if (!template_id) {
+                throw new BadRequestError('template_id must be provided');
             }
             await this.templateService.deleteTemplate(
                 Number(template_id),
-                Number(owner_id)
+                Number(user.id)
             );
             res.status(200).json(
                 new MessageResponse('Template deleted successfully')
             );
         } catch (err) {
-            this.handleError(res, err);
+            next(err);
         }
     }
-
-    handleError(res: Response, err: ResponseError) {
-        console.log('ERROR', err);
-        const status = err?.statusCode || 500;
-        const message = err?.message || 'Internal server error';
-        res.status(status).json(new MessageResponse(message));
+    getReqUser(req: Request) {
+        const user = req['user'];
+        if (!user) {
+            throw new UnauthorizedError('Unauthorized to perform this action');
+        }
+        return user;
     }
 }
 
-const createTemplateController = (templateService: TemplateService) => {
-    new TemplateController(templateService);
-    return router;
-};
-
-export { createTemplateController };
+export default TemplateController;

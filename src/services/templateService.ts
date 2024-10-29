@@ -36,6 +36,8 @@ class TemplateService {
         const isAdminRequest = owner_id === 1;
         const isAdminTemplate = template.owner_id === 1;
         if (!isAdminRequest && !isAdminTemplate) {
+            console.log(owner_id, 'owner_id');
+            console.log(template.owner_id, 'template.owner_id');
             if (
                 template.owner_id !== owner_id
                 // con template visibility: !template.public && template.owner-id !== usr_id
@@ -49,22 +51,17 @@ class TemplateService {
         return template;
     }
 
-    async saveTemplate(template: Template) {
+    async saveTemplate(template_json: Template['json'], user_id: User['id']) {
+        const template = { json: template_json, owner_id: user_id };
         await this.templateRepository.saveTemplate(template);
     }
 
-    async updateTemplate(
-        id: Template['id'],
-        json: Template['json'],
-        owner_id: User['id']
-    ) {
-        const template = await this.getTemplateById(id, owner_id);
-        if (template.owner_id !== owner_id) {
-            throw new UnauthorizedError(
-                'You do not have permission to edit this template'
-            );
-        }
-        await this.templateRepository.updateTemplate(id, json);
+    async updateTemplate(req_template: Template, user_id: User['id']) {
+        await this.getTemplateById(req_template.id, user_id);
+        await this.templateRepository.updateTemplate(
+            req_template.id,
+            req_template.json
+        );
     }
 
     async deleteTemplate(template_id: Template['id'], owner_id: User['id']) {
